@@ -1,9 +1,6 @@
 #dispatched function
 function mosquito_step!(m::immatureMosquito, model)
 
-    #update the stage
-    m.stage = m.stageNext
-
     # eggs dynamics
     if m.stage == 0
 
