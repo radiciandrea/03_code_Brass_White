@@ -8,6 +8,7 @@ Pkg.activate(".")
 # create repo on github
 
 # libraries
+#add DataFrames, Random, CSV, Plots, SunCalc, Statistics, Dates
 using Agents, DataFrames, Random, CSV, Plots, SunCalc, Statistics, Dates
 
 #Including functions
