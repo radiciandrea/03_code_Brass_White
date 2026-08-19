@@ -18,42 +18,30 @@ function  model_step!(model)
 
     tempH = funTempH(tH1, tasMax0, tasMax1, tasMin1, tasMin2, tSr1)
 
-    #hydrological parameters
-    #https://www.sciencedirect.com/science/article/abs/pii/0002157177900073
-    #Penman formula
-    h = 100 #elevation
-    Tm = tempH + 0.006*h
-    Td = tempH # dew point, to change
-    model.etadt = 700*Tm/(100-lat) + 15*(tempH - Td)/(80 - tempH)*model.dt
+    #hydrological functioning (CORRECT UNIT OF MEASURES)
+    Vprec = model.V
+    model.V = max(0, min(Vprec + model.rho - model.eta, model.Vmax)) 
 
     # eggs parameters
-    #deltaE is fixed
-    model.muEdt = -log(0.955 * exp(-0.5*((tempH-18.8)/21.53)^6))*model.dt # egg mortality rate
+    model.deltaE = max(-0.0008256*tempH^2 + 0.0334072*tempH - 0.0557825, 0.01)*model.dt # egg temperature reaction norm (development)
+    model.muEdt = -log(12.217/(6.115*sqrt(2*pi))*exp(-0.5*(tempH - 24.672)^2/6.115^2))*model.dt # egg mortality rate
+    model.muEdt = tempH > -12 ? 0.01*model.dt : 0.1*model.dt # diapausing egg mortality rate
 
-    #juvenile parameters
+    # quiescence entrancy (only once a day?)
+    model.Q = model.V < Vprec ? 1 - model.V/model.Vmax : 0
+
+    #Hatching out of quiescent class
+    model.hQ = model.V > Vprec ? model.V/model.Vmax : 0
+
+    #Primary production of the larval habitat
+    model.F = (10^-6 * log10(0.45 + 0.095*tempH)*model.V + model.fd)*model.dt
+
+    #total number of larvae
+    L = sum(l.abundance for l in allagents(model) if l isa immatureMosquito && l.stage == 3; init = 0)
+
+    # Food available per larvae
+    model.alpha = model.F/L
     
-    model.deltaJdt = model.dt/(83.85 - 4.89*tempH + 0.08*tempH^2) #juvenile development rate (in SI: 82.42 - 4.87*tempH + 0.08*tempH^ 2)
-    muJ = -log(0.977 * exp(-0.5*((tempH-21.8)/16.6)^6)) # juvenile mortality rate
-
-    # sum juveniles for mortality
-    jt0 = sum(j.abundance for j in allagents(model) if j isa immatureMosquito && j.stage == 2; init = 0)
-
-    # temp 2 https://fr.wikipedia.org/wiki/Mod%C3%A8le_de_Verhulst a => -mu, y0 => jt0, K => -mu*K
-    jt1 = (-muJ*model.K[model.t])/(1 + ((-muJ*model.K[model.t])/jt0 - 1)*exp(muJ*model.dt))
-
-    #avoid infinite value and values lower than natural mortality
-    model.muJtotdt = jt1 > 0 ? max(muJ*model.dt, log(jt0/jt1)) : muJ*model.dt
-
-    #adult development
-    model.deltaIdt =  model.dt/(50.1 - 3.574*tempH + 0.069*tempH^2) #first pre blood mean rate
-
-    # adult death
-
-    # adult reproduction
-    #model.betadt[model.it] = model.dt*(33.2*exp(-0.5*((tempH-70.3)/14.1)^2)*(38.8 - tempH)^1.5)*(tempH<= 38.8) #fertility rate
-
-    #goniotrophic comptetion (Brass et al. 2024)
-    model.deltaGdt = model.dt*max(1.93*10^-4*tempH*(tempH - 10.25)*(38.32 - min(38.32,tempH))^0.5, 0)
 
     #generation of new large agents four times a day
     if mod(model.it,  div(fixedParams.stepsPerDay, fixedParams.freqUpdateLargeClasses)) == 0

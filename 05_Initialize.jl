@@ -35,6 +35,9 @@ function initialize(;
         :rng => rng,
         :dbm => dbm,
         :deltaEdt => deltaE*dt,
+        :rhodt => varParams.rho*dt,
+        :etadt => varParams.eta*dt,
+        :V = Vmax, # we assume it is completely full at the beginning (as Brass/White)
         :tas => varParams.tas,
         :tasMin => varParams.tasMin,
         :tasMax => varParams.tasMax,

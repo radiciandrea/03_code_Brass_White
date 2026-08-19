@@ -16,26 +16,33 @@ function funVarParams(year::Int, site::String, fixedParams)
     tasMax = WDF.tasMax
     tasMin = WDF.tasMin
     tas = WDF.tas
-    rho = WDF.prec  
+    rho = WDF.prec
+    
+    #hydrological parameters
+    #https://www.sciencedirect.com/science/article/abs/pii/0002157177900073
+    #Penman formula
+    h = 100 #elevation
+    Tm = tempH + 0.006*h
+    Td = tempH # dew point, to change
+    eta = 700*Tm/(100-lat) + 15*(tempH - Td)/(80 - tempH) # mm/day
 
     #Psi = photperiod
     times = getSunlightTimes(dateSim, lat, lon)
     tSr = (times.sunrise .- collect(DateTime(year, 1, 1):Day(1):DateTime(year, 12, 31))) ./ Hour(1) .+ 2.0 # correction needed since time is in UTC
     Psi = @. (times.sunset - times.sunrise) / Hour(1)
-
-    FoA = durSim-152 # first of august: last day of diapause hatching
-    FoJul = durSim-183 # first of july: first day of (possible) diapause entrance
+    deltaPsi = [Psi 1] - [1 Psi]
 
     #Elaborate weather variables
     tas7 = mMean(tas)
     tasMinDJF = minimum([tas[1:31]; tas[(1:28) .+ 31]; tas[durSim .- (0:30)]])
     
-    #geo parameters (Metelmann 2019)
-    CPPa = 10.058 + 0.08965 * lat  # critical photperiod in autumn
+    #critical photperiod in autumn
+    Phi = 0.1*abs(lat) + 9.5
 
     # compute annual parameters
-    sigma = ifelse.((tas7 .> fixedParams.CTTs) .& (Psi .> fixedParams.CPPs) .& (daySim .< FoA), 0.1, 0.0)# spring hatching rate (1/day) (correction sigma = 0 after august)
-    omega = ifelse.((Psi .< CPPa) .& (daySim .> FoJul), 0.5, 0.0) # fraction of eggs going into diapause
+    hD = ifelse.((tas .> 12.5) .& (Psi .> Phi) .& (deltaPsi .> 0), 1, 0)# spring hatching rate of diapasuing eggs
+    D = ifelse.((tas .> 18) .& (deltaPsi .< 0), 1 .- 1 ./(1 .+ 15 .* exp.(Psi - Phi)), 1)   # fraction of eggs going into diapause
+    
     muA = ifelse.(tas .>= 0, -log.(0.677 .* exp.(-0.5 .*((tas .-20.9) ./ 13.2).^6).* abs.(tas).^0.1),
     -log.(0.677 .* exp.(-0.5 .*((tas .-20.9) ./ 13.2).^6))) # adult mortality rate +correct the problems due to negative values from SI
     gamma = @. 0.93*exp(-0.5*((tasMinDJF -11.68)/15.67)^6) #survival probability of diapausing eggs (1:/inter) #at DOY = 10?
@@ -51,13 +58,14 @@ function funVarParams(year::Int, site::String, fixedParams)
 
     varParams = (
         durSim = durSim,
-        lat = lat,
+        eta = eta,
+        rho = rho,
         tas = tas,
         tasMin = tasMin,
         tasMax = tasMax,
         tSr = tSr,
-        sigma = sigma,
-        omega = omega,
+        hD = hD,
+        D = D,
         muA = muA,
         gamma = gamma,
         h = h,
