@@ -3,6 +3,7 @@
 @agent struct immatureMosquito(GridAgent{2})
     abundance::Int # number of individuals
     stage::Int # 0 = diapasing eggs, 1 developing eggs, 2 = quiescent eggs, 3 = larvae, 4 = pupae
+    cumAlpha::Float64 # average food eated by larvae (only for larvae)
     age::Float64 # from 0 to 1: when 1, develops
 end 
 
