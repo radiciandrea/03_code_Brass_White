@@ -17,7 +17,15 @@ function  model_step!(model)
     tH1 = 24*model.dt*(abmtime(model) - model.dt*floor(abmtime(model)/model.dt))
 
     tempH = funTempH(tH1, tasMax0, tasMax1, tasMin1, tasMin2, tSr1)
-    
+
+    #hydrological parameters
+    #https://www.sciencedirect.com/science/article/abs/pii/0002157177900073
+    #Penman formula
+    h = 100 #elevation
+    Tm = tempH + 0.006*h
+    Td = tempH # dew point, to change
+    model.etadt = 700*Tm/(100-lat) + 15*(tempH - Td)/(80 - tempH)*model.dt
+
     # eggs parameters
     #deltaE is fixed
     model.muEdt = -log(0.955 * exp(-0.5*((tempH-18.8)/21.53)^6))*model.dt # egg mortality rate
