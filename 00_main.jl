@@ -8,14 +8,14 @@ Pkg.activate(".")
 # create repo on github
 
 # libraries
-#add DataFrames, Random, CSV, Plots, SunCalc, Statistics, Dates
-using Agents, DataFrames, Random, CSV, Plots, SunCalc, Statistics, Dates
-
-#Including functions
-include("01_StatFunctions.jl")
+#add 
+using Agents, DataFrames, Random, CSV, Plots, SunCalc, Statistics, Dates, Interpolations
 
 #Defining Agents
-include("02_agentsDefinition.jl")
+include("01_agentsDefinition.jl")
+
+#Including GAMM functions from Brass_White
+include("02_GAMM_Parms.jl")
 
 #Including fixed parameters 
 include("03_fixedParams.jl")
