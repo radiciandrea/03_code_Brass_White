@@ -31,10 +31,6 @@ function funVarParams(year::Int, site::String, fixedParams)
     tSr = (times.sunrise .- collect(DateTime(year, 1, 1):Day(1):DateTime(year, 12, 31))) ./ Hour(1) .+ 2.0 # correction needed since time is in UTC
     Psi = @. (times.sunset - times.sunrise) / Hour(1)
     deltaPsi = [Psi 1] - [1 Psi]
-
-    #Elaborate weather variables
-    tas7 = mMean(tas)
-    tasMinDJF = minimum([tas[1:31]; tas[(1:28) .+ 31]; tas[durSim .- (0:30)]])
     
     #critical photperiod in autumn
     Phi = 0.1*abs(lat) + 9.5
@@ -42,19 +38,6 @@ function funVarParams(year::Int, site::String, fixedParams)
     # compute annual parameters
     hD = ifelse.((tas .> 12.5) .& (Psi .> Phi) .& (deltaPsi .> 0), 1, 0)# spring hatching rate of diapasuing eggs
     D = ifelse.((tas .> 18) .& (deltaPsi .< 0), 1 .- 1 ./(1 .+ 15 .* exp.(Psi - Phi)), 1)   # fraction of eggs going into diapause
-    
-    muA = ifelse.(tas .>= 0, -log.(0.677 .* exp.(-0.5 .*((tas .-20.9) ./ 13.2).^6).* abs.(tas).^0.1),
-    -log.(0.677 .* exp.(-0.5 .*((tas .-20.9) ./ 13.2).^6))) # adult mortality rate +correct the problems due to negative values from SI
-    gamma = @. 0.93*exp(-0.5*((tasMinDJF -11.68)/15.67)^6) #survival probability of diapausing eggs (1:/inter) #at DOY = 10?
-
-    h = @. (1-fixedParams.epsRat)*(1+fixedParams.eps0)*exp(-fixedParams.epsVar*(rho-fixedParams.epsOpt)^2)/
-        (exp(-fixedParams.epsVar*(rho  -fixedParams.epsOpt)^2)+ fixedParams.eps0) +
-        fixedParams.epsRat*fixedParams.epsDens/(fixedParams.epsDens + exp(-fixedParams.epsFac*H))
-    
-    # Compute K 
-    KR = funKR(rho , daySim, fixedParams.alphaEvap, fixedParams.alphaDens)
-    KH = fixedParams.alphaRain*(H^fixedParams.expH)
-    K = fixedParams.lambda .* (KR .+ KH)
 
     varParams = (
         durSim = durSim,
@@ -65,12 +48,7 @@ function funVarParams(year::Int, site::String, fixedParams)
         tasMax = tasMax,
         tSr = tSr,
         hD = hD,
-        D = D,
-        muA = muA,
-        gamma = gamma,
-        h = h,
-        K = K
-    )
+        D = D)
 
     return(varParams)
 
