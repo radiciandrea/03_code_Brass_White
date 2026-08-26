@@ -3,30 +3,44 @@ function initialize(;
     n_adultMosquito = 0,
     dims = (20,20),
     seed = 123,
-    dbm = 0,
+    dbm = 0, # debugging mode
 
     varParams = varParams,
     
     dt = fixedParams.dt,
+
     wlmin = fixedParams.wlmin,
     wlmax = fixedParams.wlmax,
-    deltaE = fixedParams.deltaE,
 
+    Vmax = fixedParams.Vmax,
+    sigma = fixedParams.sigma,
+    NPP = 0,
+    df = fixedParams.fd,
+    K = fixedParams.K,
+    alpha = 0.0,
+
+    deltaEdt = 0.0,
     muEdt = 0.0,
-    muJtotdt = 0.0,
-    deltaJdt = 0.0,
-    deltaIdt = 0.0,
+    muDEdt = 0.0,
+    Q = 0.0,
+    hQ = 0.0,
+    deltaLdt = 0.0,
+    muLdt = 0.0,
+    deltaPdt = 0.0,
+    muPdt = 0.0,
     deltaGdt = 0.0,
+    #muAdt = 0.0,
+
     eggs_to_larvae = 0,
     deggs_to_larvae = 0,
-    laidE = 0,
-    laidED = 0,
-    laidEf = 0,
-    laidEDf = 0,
+    laidE = 0, #for ovposition counter
+    laidED = 0, #for ovposition counter
+    laidEf = 0, #for eggs generation
+    laidEDf = 0, #for eggs generation
 
-    totJ = 0,
     t = 1,
-    it = 1
+    it = 1,
+    tempH = 0
     )
 
     rng = Random.Xoshiro(seed)
@@ -34,31 +48,46 @@ function initialize(;
     properties = Dict(
         :rng => rng,
         :dbm => dbm,
-        :deltaEdt => deltaE*dt,
-        :rhodt => varParams.rho*dt,
-        :etadt => varParams.eta*dt,
-        :V = Vmax, # we assume it is completely full at the beginning (as Brass/White)
+        
         :tas => varParams.tas,
         :tasMin => varParams.tasMin,
         :tasMax => varParams.tasMax,
         :tSr => varParams.tSr,
+        :tempH => tempH,
+        :rho => varParams.rho,
+        
+        :eta => 0,
+        :V => Vmax, # we assume it is completely full at the beginning (as Brass/White)
+        :Vmax => Vmax,
+        :sigma => sigma,
+        :NPP => NPP,
+        :df => df,
+        :K => K,
+        :alpha => alpha,
+
+        :hD => varParams.hD,
+        :D => varParams.D,
+
+        :deltaEdt => deltaEdt,
         :muEdt => muEdt,
-        :muJtotdt => muJtotdt,
-        :deltaJdt => deltaJdt,
-        :deltaIdt => deltaIdt,
-        :sigma => varParams.sigma,
-        :omega => varParams.omega,
-        :muAdt => varParams.muA*dt,
-        :gamma => varParams.gamma,
+        :muDEdt => muDEdt,
+        :Q => Q,
+        :hQ => hQ,
+        :deltaLdt => deltaLdt,
+        :muLdt => muLdt,
+        :deltaPdt => deltaPdt,
+        :muPdt => muPdt,
         :deltaGdt=> deltaGdt,
+        #:muAdt => muAdt,
+        
         :wlmax => wlmax,
         :wlmin => wlmin,
-        :h => varParams.h,
-        :K => varParams.K,
-        :totJ => totJ,
+
         :dt => dt,
         :t => t,
         :it => it,
+        :tempH => 0,
+
         :eggs_to_larvae => eggs_to_larvae,
         :deggs_to_larvae => deggs_to_larvae,
         :laidE => laidE,
@@ -73,12 +102,12 @@ function initialize(;
 
     #add agents 
     if n_immatureMosquitoes > 0
-        m = immatureMosquito(0, (1,1), n_immatureMosquitoes, 0, 0, 0) # lets consider non diapausing eggs
+        m = immatureMosquito(0, (1,1), 0, n_immatureMosquitoes, 0.0, 0.0, 0.0, 0.0) # lets consider non diapausing eggs
         add_agent!(m, model) #add_agent_single!
     end
 
     for i in 1:n_adultMosquito
-        m = adultMosquito(i, (1,1), 0, 0.0, i < n_adultMosquito ? 0 : 1, 0)
+        m = adultMosquito(i, (1,1),  i < n_adultMosquito/2 ? 0 : 1, 0.0, 0.0)
         add_agent!(m, model) #add_agent_single!
     end
 
