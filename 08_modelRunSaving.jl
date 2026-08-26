@@ -19,8 +19,9 @@ for y in years
     amdf = DataFrame(t = 1:varParams.durSim,
         Ed = spdMean(adf.sum_Ed, stepsPerDay),
         E = spdMean(adf.sum_E, stepsPerDay),
-        J = spdMean(adf.sum_J, stepsPerDay),
-        I = spdMean(adf.sum_I, stepsPerDay),
+        Eq = spdMean(adf.sum_Eq, stepsPerDay),
+        L = spdMean(adf.sum_L, stepsPerDay),
+        P = spdMean(adf.sum_P, stepsPerDay),
         A = spdMean(adf.sum_A, stepsPerDay),
         O = stepsPerDay*spdMean(mdf.O, stepsPerDay))
 
