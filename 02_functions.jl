@@ -15,7 +15,7 @@ end
 
 # adapted from https://github.com/DomBrass/Aedes_DDE
 
-L_Dur  = CSV.read(raw"Data/LDgam.csv", header=true, DataFrame)
+L_Dur  = CSV.read(raw"Data/GAMM/LDgam.csv", header=true, DataFrame)
 
 D_Vals = unique(L_Dur[:,2])
 T_Vals = unique(L_Dur[:,3])
@@ -38,7 +38,7 @@ end;
 
 #Larval mortality
 
-L_Surv = CSV.read(raw"Data/Fin_LSurv.csv", header=true, DataFrame)
+L_Surv = CSV.read(raw"Data/GAMM/Fin_LSurv.csv", header=true, DataFrame)
 
 D_Vals = unique(L_Surv[:,3])
 T_Vals = unique(L_Surv[:,2])
@@ -72,7 +72,7 @@ end
 # adult reaction norms
 
 # wing_lenght
-WL     = CSV.read(raw"Data/WL_re.csv", header=true, DataFrame) 
+WL     = CSV.read(raw"Data/GAMM/WL_re.csv", header=true, DataFrame) 
 
 T_Vals = unique(WL[:,3])
 D_Vals = unique(WL[:,2])
@@ -87,7 +87,7 @@ function wing_func(Temp,Dens)
 end
 
 # adult mortality
-A_Long = CSV.read(raw"Data/AMgam.csv", header=true, DataFrame) 
+A_Long = CSV.read(raw"Data/GAMM/AMgam.csv", header=true, DataFrame) 
 
 #Defines the mortality of adults based on wing length and adult temperature
 

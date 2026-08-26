@@ -2,7 +2,7 @@
 
 function funVarParams(year::Int, site::String, fixedParams)
 
-    WDF = CSV.read(string("data/Meteo_",site,"_", year,".csv"), DataFrame)
+    WDF = CSV.read(string("data/weather/Meteo_",site,"_", year,".csv"), DataFrame)
 
     # Parameters of the site
     firstDay = Date(year)
