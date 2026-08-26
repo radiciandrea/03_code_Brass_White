@@ -20,12 +20,12 @@ function  model_step!(model)
 
     #hydrological functioning (CORRECT UNIT OF MEASURES)
     Vprec = model.V
-    model.V = max(0, min(Vprec + model.mu*(model.rho[model.t] - model.eta[model.t]), model.Vmax)) 
+    model.V = max(0, min(Vprec + model.sigma*(model.rho[model.t] - model.eta[model.t]), model.Vmax)) 
 
     # eggs parameters
 
     # development
-    model.deltaE = max(-0.0008256*model.tempH^2 + 0.0334072*model.tempH - 0.0557825, 0.01)*model.dt # egg temperature reaction norm (development)
+    model.deltaEdt = max(-0.0008256*model.tempH^2 + 0.0334072*model.tempH - 0.0557825, 0.01)*model.dt # egg temperature reaction norm (development)
     
     # mortality
     model.muEdt = -log(12.217/(6.115*sqrt(2*pi))*exp(-0.5*(model.tempH - 24.672)^2/6.115^2))*model.dt # egg mortality rate
@@ -40,13 +40,13 @@ function  model_step!(model)
     #larval parameters
 
     #Primary production of the larval habitat
-    model.F = (10^-6 * log10(0.45 + 0.095*model.tempH)*model.V + model.fd)*model.dt
+    model.NPP = (10^-6 * log10(0.45 + 0.095*model.tempH)*model.V + model.fd)*model.dt
 
     #total number of larvae
     L = sum(l.abundance for l in allagents(model) if l isa immatureMosquito && l.stage == 3; init = 0)
 
     # Food available per larvae
-    model.alpha = model.F/L
+    model.alpha = model.NPP/L
 
     # development (from GLM)
     model.deltaLdt = g_L(model.tempH, model.alpha)*model.dt
@@ -83,8 +83,8 @@ function  model_step!(model)
     # size (wing lenght)
 
     # goniotrophic cycle (equivalent of duration: here we transform it in rate
-    model.tempHG = @. max(12, min(38.3, model.tempH))
-    model.deltaGAdt = max(0.000193 * model.tempHG * (model.tempHG - 10.25) * sqrt(38.32 - model.tempHG), 0.01)*model.dt
+    tempHG = @. max(12, min(38.3, model.tempH))
+    model.deltaGdt = max(0.000193 * tempHG * (tempHG - 10.25) * sqrt(38.32 - tempHG), 0.01)*model.dt
 
     # mortality & fecundity:
     # defined per individual      
