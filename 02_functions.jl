@@ -1,3 +1,18 @@
+# statit functions and GAMM 
+
+function spdMean(x::Vector{}, stepsPerDay::Int = 48)
+    #::Vector
+    lmx = div((length(x)-1),stepsPerDay) 
+    mx = zeros(Float64, lmx)
+
+    for i in 1:lmx
+        mx[i] = mean(x[1 .+ ((1+stepsPerDay*(i-1)) : stepsPerDay*i)])
+    end
+    
+    return(mx)
+    
+end
+
 # adapted from https://github.com/DomBrass/Aedes_DDE
 
 L_Dur  = CSV.read(raw"Data/LDgam.csv", header=true, DataFrame)
