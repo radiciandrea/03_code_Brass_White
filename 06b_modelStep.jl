@@ -20,7 +20,7 @@ function  model_step!(model)
 
     #hydrological functioning (CORRECT UNIT OF MEASURES)
     Vprec = model.V
-    model.V = max(0, min(Vprec + model.sigma*(model.rho[model.t] - model.eta[model.t]), model.Vmax)) 
+    model.V = max(0, min(Vprec + model.sigma*(model.rho[model.t] - model.eta[model.t])*model.dt, model.Vmax)) 
 
     # eggs parameters
 

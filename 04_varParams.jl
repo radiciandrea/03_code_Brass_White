@@ -12,7 +12,6 @@ function funVarParams(year::Int, site::String, fixedParams)
 
     lat = WDF.lat[1]
     lon = WDF.lon[1]
-    H = WDF.H[1]
     tasMax = WDF.tasMax
     tasMin = WDF.tasMin
     tas = WDF.tas
@@ -22,9 +21,9 @@ function funVarParams(year::Int, site::String, fixedParams)
     #https://www.sciencedirect.com/science/article/abs/pii/0002157177900073
     #Penman formula
     h = 100 #elevation
-    Tm = tempH + 0.006*h
-    Td = tempH # dew point, to change
-    eta = 700*Tm/(100-lat) + 15*(tempH - Td)/(80 - tempH) # mm/day
+    Tm = tas + 0.006*h # to change
+    Td = tas # dew point, to change
+    eta = 700*Tm/(100-lat) + 15*(tas - Td)/(80 - tas) # mm/day
 
     #Psi = photperiod
     times = getSunlightTimes(dateSim, lat, lon)
