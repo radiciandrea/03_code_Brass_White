@@ -15,7 +15,7 @@ using Agents, DataFrames, Random, CSV, Plots, SunCalc, Statistics, Dates, Interp
 include("01_agentsDefinition.jl")
 
 #Including GAMM functions from Brass_White
-include("02_GAMM_Parms.jl")
+include("02_functions.jl")
 
 #Including fixed parameters 
 include("03_fixedParams.jl")
