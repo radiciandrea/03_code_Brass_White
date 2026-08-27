@@ -10,5 +10,6 @@ adata = [(Ed, sum), (E, sum), (Eq, sum), (L, sum), (P, sum), (A, sum)]
 
 # Model data save
 O(model) = model.laidE + model.laidED
+V(model) = model.V
 
-mdata = [O]
+mdata = [O, V]
