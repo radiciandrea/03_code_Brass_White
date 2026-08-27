@@ -1,4 +1,4 @@
-# statit functions and GAMM 
+# static functions and GAMM 
 
 function spdMean(x::Vector{}, stepsPerDay::Int = 48)
     #::Vector
@@ -13,6 +13,20 @@ function spdMean(x::Vector{}, stepsPerDay::Int = 48)
     
 end
 
+function funTempH(tH, tasMax0, tasMax, tasMin, tasMin2, tSr)
+
+    if tH<tSr
+    tempH = (tasMax0+tasMin)/2 + (tasMax0-tasMin)/2*cos(pi*(tH+10)/(10+tSr))
+    elseif (tH>=tSr) & (tH<14)
+    tempH = (tasMax+tasMin)/2 - (tasMax-tasMin)/2*cos(pi*(tH-tSr)/(14-tSr))
+    else 
+    tempH = (tasMax+tasMin2)/2 + (tasMax-tasMin2)/2*cos(pi*(tH-14)/(10+tSr))
+    end
+
+    return(tempH)
+end
+
+# GAMM
 # adapted from https://github.com/DomBrass/Aedes_DDE
 
 L_Dur  = CSV.read(raw"Data/GAMM/LDgam.csv", header=true, DataFrame)
