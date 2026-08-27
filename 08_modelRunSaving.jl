@@ -23,7 +23,8 @@ for y in years
         L = spdMean(adf.sum_L, stepsPerDay),
         P = spdMean(adf.sum_P, stepsPerDay),
         A = spdMean(adf.sum_A, stepsPerDay),
-        O = stepsPerDay*spdMean(mdf.O, stepsPerDay))
+        O = stepsPerDay*spdMean(mdf.O, stepsPerDay),
+        V = stepsPerDay*spdMean(mdf.V, stepsPerDay))
 
     CSV.write(string("sim/Sim_", site, "_", y, ".csv"), amdf)
 
@@ -43,17 +44,19 @@ model = initialize(; n_immatureMosquitoes = n_immatureMosquitoes)
 @time adf, mdf = run!(model, steps; adata, mdata)
 
 amdf = DataFrame(t = 1:varParams.durSim,
-    Ed = spdMean(adf.sum_Ed, stepsPerDay),
-    E = spdMean(adf.sum_E, stepsPerDay),
-    J = spdMean(adf.sum_J, stepsPerDay),
-    I = spdMean(adf.sum_I, stepsPerDay),
-    A = spdMean(adf.sum_A, stepsPerDay),
-    O = stepsPerDay*spdMean(mdf.O, stepsPerDay))
+        Ed = spdMean(adf.sum_Ed, stepsPerDay),
+        E = spdMean(adf.sum_E, stepsPerDay),
+        Eq = spdMean(adf.sum_Eq, stepsPerDay),
+        L = spdMean(adf.sum_L, stepsPerDay),
+        P = spdMean(adf.sum_P, stepsPerDay),
+        A = spdMean(adf.sum_A, stepsPerDay),
+        O = stepsPerDay*spdMean(mdf.O, stepsPerDay),
+        V = stepsPerDay*spdMean(mdf.V, stepsPerDay))
 
-p1 = Plots.plot(amdf.t/7, [amdf.Ed, amdf.E], label=["Ed" "E"]);
-p2 = Plots.plot(amdf.t/7, [amdf.J], label="J");
-p3 = Plots.plot(amdf.t/7, [amdf.I, amdf.A], label=["I" "A"]);
-p4 = Plots.plot(1:52, 7*spdMean(amdf.O,7), label="Ovip.");
+p1 = Plots.plot(amdf.t/7, [amdf.Ed, amdf.E, amdf.Eq], label=["Ed" "E" "Eq"]);
+p2 = Plots.plot(amdf.t/7, [amdf.L, amdf.P, amdf.A], label=["L" "P" "A"]);
+p3 = Plots.plot(1:52, 7*spdMean(amdf.O,7), label="Ovip.");
+p4 = Plots.plot(1:52, spdMean(amdf.V,7), label="Water Level");
 
 ptot = plot(p1, p2, p3, p4, plot_title = string(uppercasefirst(lowercase(site)), " - ", y))
 
