@@ -11,7 +11,7 @@ freqUpdateLargeClasses = max(1, div(stepsPerDay, 12)), # frequency of the day at
 
 #Environmental & Hydrological
 sigma = 130, #Surface area of developmental habitat (cm2)
-Vmax = 500, # Volume of developmental habitat (ml)
+Vmax = 500.0, # Volume of developmental habitat (ml)
 fd = 80, #Detritus in larval habitat
 K = 80, #Number of larval habitats (TO CHANGE)
 
