@@ -21,22 +21,23 @@ function funVarParams(year::Int, site::String, fixedParams)
     #https://www.sciencedirect.com/science/article/abs/pii/0002157177900073
     #Penman formula
     h = 100 #elevation
-    Tm = tas + 0.006*h # to change
-    Td = tas # dew point, to change
-    eta = 700*Tm/(100-lat) + 15*(tas - Td)/(80 - tas) # mm/day
+    Tm = @. tas + 0.006*h # to change
+    Td = @. tas # dew point, to change
+    eta = @. 700*Tm/(100-lat) + 15*(tas - Td)/(80 - tas) # mm/day (enromous values!)
+    eta = @. eta *0.01
 
     #Psi = photperiod
     times = getSunlightTimes(dateSim, lat, lon)
     tSr = (times.sunrise .- collect(DateTime(year, 1, 1):Day(1):DateTime(year, 12, 31))) ./ Hour(1) .+ 2.0 # correction needed since time is in UTC
     Psi = @. (times.sunset - times.sunrise) / Hour(1)
-    deltaPsi = [Psi 1] - [1 Psi]
+    deltaPsi = vcat(Psi[2:(length(Psi))], Psi[1]) - Psi
     
     #critical photperiod in autumn
     Phi = 0.1*abs(lat) + 9.5
 
     # compute annual parameters
     hD = ifelse.((tas .> 12.5) .& (Psi .> Phi) .& (deltaPsi .> 0), 1, 0)# spring hatching rate of diapasuing eggs
-    D = ifelse.((tas .> 18) .& (deltaPsi .< 0), 1 .- 1 ./(1 .+ 15 .* exp.(Psi - Phi)), 1)   # fraction of eggs going into diapause
+    D = ifelse.((tas .< 18) .& (deltaPsi .< 0), 1 .- 1 ./(1 .+ 15 .* exp.(Psi .- Phi)), 1)   # fraction of eggs not going into diapause
 
     varParams = (
         durSim = durSim,
