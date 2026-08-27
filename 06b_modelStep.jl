@@ -53,13 +53,13 @@ function  model_step!(model)
 
     # mortality (from GLM)
     if model.V > 0
-      if (model.V < model.Vmax) && (model.rho*model.mu < 0.5 * model.Vmax)
+      if (model.V < model.Vmax) && (model.rho[model.t]*model.sigma < 0.5 * model.Vmax)
         model.muLdt = mu_L(model.tempH, model.alpha)*model.dt
       else
-         model.muLdt = muDF *model.dt
+         model.muLdt = model.muDFdt
       end
     else
-      model.muLdt = muDD*model.dt
+      model.muLdt = model.muDDdt
     end
 
     # Pupae parameters
@@ -69,13 +69,13 @@ function  model_step!(model)
 
     # mortality 
     if model.V > 0
-      if (model.V < model.Vmax) && (model.rho*model.mu < 0.5 * model.Vmax)
+      if (model.V < model.Vmax) && (model.rho[model.t]*model.sigma < 0.5 * model.Vmax)
         model.muPdt = -log(max(-0.0070628*model.tempH^2 + 0.3331028*model.tempH - 2.9878761, 0.01))*model.dt
       else
-         model.muPdt = model.muDD*model.dt
+         model.muPdt = model.muDDdt
       end
     else
-      model.muPdt = model.muDF*model.dt
+      model.muPdt = model.muDFdt
     end
 
     # Adult parameters
