@@ -4,18 +4,16 @@ function initialize(;
     dims = (20,20),
     seed = 123,
     dbm = 0, # debugging mode
-
-    varParams = varParams,
-    
     dt = fixedParams.dt,
 
+    varParams = varParams,
     wlmin = fixedParams.wlmin,
     wlmax = fixedParams.wlmax,
 
     Vmax = fixedParams.Vmax,
     sigma = fixedParams.sigma,
     NPP = 0,
-    df = fixedParams.fd,
+    fd = fixedParams.fd,
     K = fixedParams.K,
     alpha = 0.0,
 
@@ -26,6 +24,8 @@ function initialize(;
     hQ = 0.0,
     deltaLdt = 0.0,
     muLdt = 0.0,
+    muDF = fixedParams.muDF,
+    muDD = fixedParams.muDD,
     deltaPdt = 0.0,
     muPdt = 0.0,
     deltaGdt = 0.0,
@@ -33,6 +33,10 @@ function initialize(;
 
     eggs_to_larvae = 0,
     deggs_to_larvae = 0,
+    deggs_to_qeggs = 0,
+    eggs_to_qeggs = 0,
+    qeggs_to_larvae = 0,
+    
     laidE = 0, #for ovposition counter
     laidED = 0, #for ovposition counter
     laidEf = 0, #for eggs generation
@@ -56,12 +60,12 @@ function initialize(;
         :tempH => tempH,
         :rho => varParams.rho,
         
-        :eta => 0,
+        :eta => varParams.eta,
         :V => Vmax, # we assume it is completely full at the beginning (as Brass/White)
         :Vmax => Vmax,
         :sigma => sigma,
         :NPP => NPP,
-        :df => df,
+        :fd => fd,
         :K => K,
         :alpha => alpha,
 
@@ -75,6 +79,8 @@ function initialize(;
         :hQ => hQ,
         :deltaLdt => deltaLdt,
         :muLdt => muLdt,
+        :muDFdt => muDF*dt,
+        :muDDdt => muDD*dt,
         :deltaPdt => deltaPdt,
         :muPdt => muPdt,
         :deltaGdt=> deltaGdt,
@@ -90,6 +96,9 @@ function initialize(;
 
         :eggs_to_larvae => eggs_to_larvae,
         :deggs_to_larvae => deggs_to_larvae,
+        :deggs_to_qeggs => deggs_to_qeggs,
+        :eggs_to_qeggs => eggs_to_qeggs,
+        :qeggs_to_larvae => qeggs_to_larvae,
         :laidE => laidE,
         :laidED => laidED,
         :laidEf => laidEf,
