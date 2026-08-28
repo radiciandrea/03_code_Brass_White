@@ -53,9 +53,10 @@ amdf = DataFrame(t = 1:varParams.durSim,
         O = stepsPerDay*spdMean(mdf.O, stepsPerDay),
         V = spdMean(mdf.V, stepsPerDay))
 
-p1 = Plots.plot(amdf.t/7, [amdf.Ed, amdf.E, amdf.Eq], label=["Ed" "E" "Eq"]);
-p2 = Plots.plot(amdf.t/7, [amdf.L, amdf.P, amdf.A], label=["L" "P" "A"]);
+p1 = Plots.plot(amdf.t/7, [amdf.Ed, amdf.E, amdf.Eq, amdf.L .+ amdf.P], label=["Ed" "E" "Eq" "L+P"]);
+p2 = Plots.plot(amdf.t/7, [amdf.A], label="A");
 p3 = Plots.plot(1:52, 7*spdMean(amdf.O, 7), label="Ovip.");
+Plots.scatter!(1:52, 7*spdMean(amdf.O, 7), label="");
 p4 = Plots.plot(1:52, spdMean(amdf.V, 7), label="Water Level");
 
 ptot = plot(p1, p2, p3, p4, plot_title = string(uppercasefirst(lowercase(site)), " - ", y))
