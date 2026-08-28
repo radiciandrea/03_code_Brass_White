@@ -55,7 +55,7 @@ function  model_step!(model)
     model.deltaLdt = g_L(model.tempH, log(model.alpha))*model.dt # since food functions are written as log
 
     #crowding term mortality (after mail exchange with Dom)
-    cTmuL = max(0, exp(-exp(1000*(1-totL/3.0)/model.V)) - exp(-1))
+    cTmuL = max(0, (exp(-exp(1000*(1-totL/3.0)/model.V)) - exp(-1))/(1 - exp(-1)))
 
     # mortality (from GLM) 
     if model.V > 0
