@@ -147,50 +147,52 @@ function mosquito_step!(m::adultMosquito, model)
         remove_agent!(m, model)
     end
 
-    #goniotriphic increase
-    m.goniotrophicIncrease +=  model.deltaGdt
+    # if female
+    if m.sex == 0
+        #goniotriphic increase
+        m.goniotrophicIncrease +=  model.deltaGdt
 
-    #reproduction
-    if m.goniotrophicIncrease >= 1
-        if model.D[model.t] < 1
-            
-            # non diapausing oviposition    
-            newE_potential = 0.5*exp(2.35 + 0.69*m.wlength)*model.D[model.t]
-            if newE_potential < 1
-                sampleA = rand(model.rng)
-                newE = 1*(sampleA < newE_potential)
-            else
-                newE = round(Int, newE_potential)
-            end
-            
-            #diapausing oviposiiton
-            newED_potential = 0.5*exp(2.35 + 0.69*m.wlength)*(1 - model.D[model.t])
-            if newED_potential < 1
-                sampleA = rand(model.rng)
-                newED = 1*(sampleA < newED_potential)
-            else
-                newED = round(Int, newED_potential)
-            end
-            model.laidED += newED
-            model.laidEDf += newED        
-            
-        else
-            
-            # non diapausing oviposition only  
-            newE_potential = 0.5*exp(2.35 + 0.69*m.wlength)
-            if newE_potential < 1
-                sampleA = rand(model.rng)
-                newE = 1*(sampleA < newE_potential)
-            else
-                newE = round(Int, newE_potential)
-            end
-        end
+        #reproduction
+        if m.goniotrophicIncrease >= 1
+            if model.D[model.t] < 1
 
-        #we put this outside, since non-diapausing are anyway generated
-        model.laidE += newE
-        model.laidEf += newE
-        
-        m.goniotrophicIncrease = 0
-    end 
-    
+                # non diapausing oviposition    
+                newE_potential = 0.5*exp(2.35 + 0.69*m.wlength)*model.D[model.t]
+                if newE_potential < 1
+                    sampleA = rand(model.rng)
+                    newE = 1*(sampleA < newE_potential)
+                else
+                    newE = round(Int, newE_potential)
+                end
+
+                #diapausing oviposiiton
+                newED_potential = exp(2.35 + 0.69*m.wlength)*(1 - model.D[model.t]) # removed 0.5*
+                if newED_potential < 1
+                    sampleA = rand(model.rng)
+                    newED = 1*(sampleA < newED_potential)
+                else
+                    newED = round(Int, newED_potential)
+                end
+                model.laidED += newED
+                model.laidEDf += newED        
+
+            else
+
+                # non diapausing oviposition only  
+                newE_potential = 0.5*exp(2.35 + 0.69*m.wlength)
+                if newE_potential < 1
+                    sampleA = rand(model.rng)
+                    newE = 1*(sampleA < newE_potential)
+                else
+                    newE = round(Int, newE_potential)
+                end
+            end
+
+            #we put this outside, since non-diapausing are anyway generated
+            model.laidE += newE
+            model.laidEf += newE
+
+            m.goniotrophicIncrease = 0
+        end 
+        end    
 end
