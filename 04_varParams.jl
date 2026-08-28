@@ -12,19 +12,19 @@ function funVarParams(year::Int, site::String, fixedParams)
 
     lat = WDF.lat[1]
     lon = WDF.lon[1]
+    alt = WDF.alt[1]
     tasMax = WDF.tasMax
     tasMin = WDF.tasMin
     tas = WDF.tas
     rho = WDF.prec
-    
-    #hydrological parameters
-    #https://www.sciencedirect.com/science/article/abs/pii/0002157177900073
-    #Penman formula
-    h = 100 #elevation
-    Tm = @. tas + 0.006*h # to change
-    Td = @. tas # dew point, to change
-    eta = @. 700*Tm/(100-lat) + 15*(tas - Td)/(80 - tas) # mm/day (enromous values!)
-    eta = @. eta *0.005
+
+    if sum(WDF.ETP) > 0
+        eta = WDF.ETP
+    else
+        #If eta absent: Linacre formula + Magnus
+        #https://www.sciencedirect.com/science/article/abs/pii/0002157177900073
+        eta = @. 700*(tas + 0.006 * alt)/(100-lat) + 15*(tas - MagnusFormula(WDF.RH, tas))/(80 - tas) # mm/day (enromous values!)
+    end
 
     #Psi = photperiod
     times = getSunlightTimes(dateSim, lat, lon)
