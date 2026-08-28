@@ -24,7 +24,7 @@ function funVarParams(year::Int, site::String, fixedParams)
     Tm = @. tas + 0.006*h # to change
     Td = @. tas # dew point, to change
     eta = @. 700*Tm/(100-lat) + 15*(tas - Td)/(80 - tas) # mm/day (enromous values!)
-    eta = @. eta *0.01
+    eta = @. eta *0.005
 
     #Psi = photperiod
     times = getSunlightTimes(dateSim, lat, lon)
