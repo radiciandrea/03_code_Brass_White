@@ -10,8 +10,8 @@ freqUpdateLargeClasses = max(1, div(stepsPerDay, 12)), # frequency of the day at
 #parameters from Brass & White 2024
 
 #Environmental & Hydrological
-sigma = 130, #Surface area of developmental habitat (cm2)
-Vmax = 500.0, # Volume of developmental habitat (ml)
+sigma = 114^2, #Surface area of developmental habitat (mm2)
+lambda = 38, # height of the developmental habitat (mm2
 fd = 80, #Detritus in larval habitat
 K = 80, #Number of larval habitats (TO CHANGE)
 
