@@ -61,7 +61,7 @@ nodes = (T_Vals,D_Vals);
 sGird = interpolate(nodes,L_S, Gridded(Linear()));
 surv_L = extrapolate(sGird,Flat());
 
-# larval mortality rate
+# larval throught stage mortality rate
 
 function mu_L(Temp,Dens)
 
