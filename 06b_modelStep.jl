@@ -7,7 +7,7 @@ function  model_step!(model)
     # to correct
     model.it = max(1, abmtime(model))
     model.t = max(1, round(Int64, abmtime(model)*model.dt))
-    model.dbm == 1 && println(model.t)
+    model.dbm > 0 && println(model.t, " - (", model.it, ")")
 
     tasMax0 = model.tasMax[max(1, model.t-1)]
     tasMax1 = model.tasMax[model.t]
@@ -21,14 +21,16 @@ function  model_step!(model)
     #hydrological functioning (CORRECT UNIT OF MEASURES)
     Vprec = model.V
     model.V = max(0, min(Vprec + model.sigma*(model.rho[model.t] - model.eta[model.t])*model.dt, model.Vmax)) 
-
+    
     # eggs parameters
 
     # development
     model.deltaEdt = max(-0.0008256*model.tempH^2 + 0.0334072*model.tempH - 0.0557825, 0.01)*model.dt # egg temperature reaction norm (development)
     
     # mortality
-    model.muEdt = -log(12.217/(6.115*sqrt(2*pi))*exp(-0.5*(model.tempH - 24.672)^2/6.115^2))*model.dt # egg mortality rate
+
+    tsmuEdt = -log(12.217/(6.115*sqrt(2*pi))*exp(-0.5*(model.tempH - 24.672)^2/6.115^2))*model.dt # throught stage egg mortality rate
+    model.muEdt = tsmuEdt*max(-0.0008256*model.tempH^2 + 0.0334072*model.tempH - 0.0557825, 0.01)*model.dt # egg mortality rate
     model.muDEdt = model.tempH > -12 ? 0.01*model.dt : 0.1*model.dt # diapausing egg mortality rate
 
     # quiescence entrancy
@@ -39,24 +41,28 @@ function  model_step!(model)
 
     #larval parameters
 
-    #Primary production of the larval habitat
-    model.NPP = (10^-6 * log10(0.45 + 0.095*model.tempH)*model.V + model.fd)*model.dt
+    #Primary production of the larval habitat (corrected from github)
+    #model.GPP = (10^-6 * log10(0.45 + 0.095*model.tempH)*model.V + model.fd)*model.dt
+    model.GPP = (10^(0.45 + 0.095*model.tempH - 6)*model.V + model.fd)*model.dt
 
-    #total number of larvae
-    L = sum(l.abundance for l in allagents(model) if l isa immatureMosquito && l.stage == 3; init = 0)
+    #total number of larvae (0.1 to plot also when infinite)
+    totL = max(sum(l.abundance for l in allagents(model) if l isa immatureMosquito && l.stage == 3; init = 0), 0.1)
 
     # Food available per larvae
-    model.alpha = model.NPP/L
+    model.alpha = model.GPP/totL
 
     # development (from GLM)
-    model.deltaLdt = g_L(model.tempH, model.alpha)*model.dt
+    model.deltaLdt = g_L(model.tempH, log(model.alpha))*model.dt # since food functions are written as log
 
-    # mortality (from GLM)
+    # mortality (from GLM) 
     if model.V > 0
       if (model.V < model.Vmax) && (model.rho[model.t]*model.sigma < 0.5 * model.Vmax)
-        model.muLdt = mu_L(model.tempH, model.alpha)*model.dt
+        # through-stage mortality (from GLM) 
+        tSmuL = mu_L(model.tempH, log(model.alpha)) # since food functions are written as log
+        # Instantanous mortality
+        model.muLdt = min(tSmuL*g_L(model.tempH, log(model.alpha)) + exp(-exp(1000*(1-totL/3.0)/model.V)), 1)*model.dt
       else
-         model.muLdt = model.muDFdt
+        model.muLdt = model.muDFdt
       end
     else
       model.muLdt = model.muDDdt
@@ -70,17 +76,18 @@ function  model_step!(model)
     # mortality 
     if model.V > 0
       if (model.V < model.Vmax) && (model.rho[model.t]*model.sigma < 0.5 * model.Vmax)
-        model.muPdt = -log(max(-0.0070628*model.tempH^2 + 0.3331028*model.tempH - 2.9878761, 0.01))*model.dt
+        # throught stage mortality
+        tSmuPdt = -log(max(-0.0070628*model.tempH^2 + 0.3331028*model.tempH - 2.9878761, 0.01))*model.dt
+        #instantaneous mortality rate
+        model.muPdt = -log(max(2.916*10^(-5)*model.tempH*(model.tempH - 10.08)*(47.68 - model.tempH)^(1/0.8317), 0.01))*tSmuPdt
       else
-         model.muPdt = model.muDDdt
+        model.muPdt
       end
     else
-      model.muPdt = model.muDFdt
+      model.muPdt
     end
 
     # Adult parameters
-
-    # size (wing lenght)
 
     # goniotrophic cycle (equivalent of duration: here we transform it in rate
     tempHG = @. max(12, min(38.3, model.tempH))
@@ -130,6 +137,8 @@ function  model_step!(model)
         abundance = model.eggs_to_qeggs, stage = 2, age = 0, cumFood = 0, cumTemp = 0, LSD = 0)
         model.eggs_to_qeggs = 0
       end
+
+      #pupae are created in agent step
 
     end
 

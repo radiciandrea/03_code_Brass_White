@@ -1,7 +1,100 @@
 #dispatched function
 function mosquito_step!(m::immatureMosquito, model)
 
-    # eggs dynamics
+    # pupae (to bring at the beginning!)
+    if m.stage == 4 
+        # mortality (natural and competition)        
+        dead_P_potential = m.abundance*(1-exp(-model.muPdt))
+
+        if dead_P_potential < 1 
+            sampP = rand(model.rng)
+            dead_P = 1*(sampP < dead_P_potential)
+        else
+            dead_P = round(Int, dead_P_potential)
+        end
+
+        m.abundance = m.abundance - dead_P
+        
+        #aging and development
+        m.age += model.deltaPdt
+        if m.age >= 1
+            for i in 1:m.abundance
+                add_agent!(adultMosquito, model;
+                sex = i > m.abundance/2 ? 0 : 1,
+                wlength = wing_func(m.cumTemp/m.LSD, log(m.cumFood/m.LSD)), # since food functions are written as log
+                goniotrophicIncrease = 0.0)
+            end
+            remove_agent!(m, model)   
+        end
+        
+    end
+
+    # larvae
+    if m.stage == 3 
+        # mortality (natural and competition)        
+        dead_L_potential = m.abundance*(1-exp(-model.muLdt))
+
+        if dead_L_potential < 1
+            sampL = rand(model.rng)
+            dead_L = 1*(sampL < dead_L_potential)
+        else
+            dead_L = round(Int, dead_L_potential)
+        end
+
+        m.abundance = m.abundance - dead_L
+        
+        #eating, ageing, development
+        m.cumFood += model.alpha*model.dt
+        m.cumTemp += model.tempH*model.dt
+        m.LSD += model.dt
+        m.age += model.deltaLdt
+
+        if m.age >= 1
+            m.stage = 4
+        end
+        
+    end
+
+    # eggs and quiescente eggs dynamics
+    if (m.stage == 1 || m.stage == 2)
+        # mortality (here fixed, and time step is needed)
+        dead_eggs_potential = m.abundance*(1-exp(-model.muEdt))
+        if dead_eggs_potential < 1
+            sampE = rand(model.rng)
+            dead_eggs = 1*(sampE < dead_eggs_potential)
+        else
+            dead_eggs = round(Int, dead_eggs_potential)
+        end
+
+        m.abundance = m.abundance - dead_eggs
+
+        #aging and development (without h)
+        m.age += model.deltaEdt
+        
+        if m.age > 1 # (m.age == 1) || (m.age == 1)
+            eggs_to_larvae_potential = (1-model.Q)*m.abundance
+            if eggs_to_larvae_potential < 1 
+                sampE = rand(model.rng)
+                eggs_to_larvae = 1*(sampE < eggs_to_larvae_potential)
+            else
+                eggs_to_larvae = round(Int, eggs_to_larvae_potential)
+            end
+
+            m.abundance = m.abundance - eggs_to_larvae 
+            model.dbm == 1 && println("created ", eggs_to_larvae, " juvenile/s from E")        
+
+            model.eggs_to_larvae += eggs_to_larvae
+
+            # the remaining are quiescent (or they were also before)
+            m.stage = 2
+
+            if m.abundance == 0
+                remove_agent!(m, model)         
+            end 
+        end
+    end
+
+    # diapausing eggs dynamics
     if m.stage == 0
 
         # diapausing eggs here are just one agent (id = 0) of variable abundance.
@@ -42,101 +135,7 @@ function mosquito_step!(m::immatureMosquito, model)
 
         model.deggs_to_larvae += deggs_to_larvae
         model.deggs_to_qeggs += deggs_to_qeggs
-    end
-
-    # eggs and quiescente eggs dynamics
-    if m.stage == 1
-        # mortality (here fixed, and time step is needed)
-        dead_eggs_potential = m.abundance*(1-exp(-model.muEdt))
-        if dead_eggs_potential < 1
-            sampE = rand(model.rng)
-            dead_eggs = 1*(sampE < dead_eggs_potential)
-        else
-            dead_eggs = round(Int, dead_eggs_potential)
-        end
-
-        m.abundance = m.abundance - dead_eggs
-
-        #aging and development (without h)
-        m.age += model.deltaEdt
-        
-        if m.age > 1 # (m.age == 1) || (m.age == 1)
-            eggs_to_larvae_potential = (1-model.Q)*m.abundance
-            if eggs_to_larvae_potential < 1 
-                sampE = rand(model.rng)
-                eggs_to_larvae = 1*(sampE < eggs_to_larvae_potential)
-            else
-                eggs_to_larvae = round(Int, eggs_to_larvae_potential)
-            end
-
-            m.abundance = m.abundance - eggs_to_larvae 
-            model.dbm == 1 && println("created ", eggs_to_larvae, " juvenile/s from E")        
-
-            model.eggs_to_larvae += eggs_to_larvae
-
-            # the remaining are quiescent (or they were also before)
-            m.stage = 2
-
-            if m.abundance == 0
-                remove_agent!(m, model)         
-            end 
-        end
-    end
-
-    # larvae
-    if m.stage == 3 
-        # mortality (natural and competition)        
-        dead_L_potential = m.abundance*(1-exp(-model.muLdt))
-
-        if dead_L_potential < 1
-            sampL = rand(model.rng)
-            dead_L = 1*(sampL < dead_L_potential)
-        else
-            dead_L = round(Int, dead_L_potential)
-        end
-
-        m.abundance = m.abundance - dead_L
-        
-        #eating, ageing, development
-        m.cumFood += model.alpha
-        m.cumTemp += model.tempH
-        m.LSD += model.dt
-        m.age += model.deltaLdt
-
-        if m.age >= 1
-            m.stage = 4
-        end
-        
-    end
-
-    # pupae
-    if m.stage == 4 
-        # mortality (natural and competition)        
-        dead_P_potential = m.abundance*(1-exp(-model.muPdt))
-
-        if dead_P_potential < 1 
-            sampP = rand(model.rng)
-            dead_P = 1*(sampP < dead_P_potential)
-        else
-            dead_P = round(Int, dead_P_potential)
-        end
-
-        m.abundance = m.abundance - dead_P
-        
-        #aging and development
-        m.age += model.deltaPdt
-        if m.age >= 1
-            for i in 1:m.abundance
-                add_agent!(adultMosquito, model;
-                sex = i > m.abundance/2 ? 0 : 1,
-                wlength = wing_func(m.cumTemp/m.LSD, m.cumFood/m.LSD),
-                goniotrophicIncrease = 0.0)
-            end
-            remove_agent!(m, model)   
-        end
-        
-    end
-    
+    end    
 end
 
 function mosquito_step!(m::adultMosquito, model)
@@ -153,10 +152,10 @@ function mosquito_step!(m::adultMosquito, model)
 
     #reproduction
     if m.goniotrophicIncrease >= 1
-        if model.D[model.t] > 0
+        if model.D[model.t] < 1
             
             # non diapausing oviposition    
-            newE_potential = 0.5*exp(2.35 + 0.69*m.wlength)*(1 - model.D[model.t])
+            newE_potential = 0.5*exp(2.35 + 0.69*m.wlength)*model.D[model.t]
             if newE_potential < 1
                 sampleA = rand(model.rng)
                 newE = 1*(sampleA < newE_potential)
@@ -165,7 +164,7 @@ function mosquito_step!(m::adultMosquito, model)
             end
             
             #diapausing oviposiiton
-            newED_potential = 0.5*exp(2.35 + 0.69*m.wlength)*model.D[model.t]
+            newED_potential = 0.5*exp(2.35 + 0.69*m.wlength)*(1 - model.D[model.t])
             if newED_potential < 1
                 sampleA = rand(model.rng)
                 newED = 1*(sampleA < newED_potential)
@@ -178,7 +177,7 @@ function mosquito_step!(m::adultMosquito, model)
         else
             
             # non diapausing oviposition only  
-            newE_potential = 0.5*exp(2.35 + 0.69*m.wlength)*(1 - model.D[model.t])
+            newE_potential = 0.5*exp(2.35 + 0.69*m.wlength)
             if newE_potential < 1
                 sampleA = rand(model.rng)
                 newE = 1*(sampleA < newE_potential)
