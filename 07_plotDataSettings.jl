@@ -12,4 +12,12 @@ adata = [(Ed, sum), (E, sum), (Eq, sum), (L, sum), (P, sum), (A, sum)]
 O(model) = model.laidE + model.laidED
 V(model) = model.V
 
-mdata = [O, V]
+#mdata = [O, V]
+
+Q(model) = model.Q
+hQ(model) = model.hQ
+alpha(model) = model.alpha
+deltaL(model) = model.deltaLdt/model.dt
+muL(model) = model.muLdt/model.dt
+
+mdata = [O, V, Q, hQ, alpha, deltaL, muL]
