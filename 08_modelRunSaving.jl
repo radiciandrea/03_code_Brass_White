@@ -1,5 +1,5 @@
 years = 2017:2024
-site = "MONTARNAUD"
+site = "PEROLS" # MONTARNAUD do not have EVP and RH
 
 n_immatureMosquitoes = 200
 
@@ -56,7 +56,6 @@ amdf = DataFrame(t = 1:varParams.durSim,
 p1 = Plots.plot(amdf.t/7, [amdf.Ed, amdf.E, amdf.Eq, amdf.L .+ amdf.P], label=["Ed" "E" "Eq" "L+P"]);
 p2 = Plots.plot(amdf.t/7, [amdf.A], label="A");
 p3 = Plots.plot(1:52, 7*spdMean(amdf.O, 7), label="Ovip.");
-Plots.scatter!(1:52, 7*spdMean(amdf.O, 7), label="");
 p4 = Plots.plot(1:52, spdMean(amdf.V, 7), label="Water Level");
 
 ptot = plot(p1, p2, p3, p4, plot_title = string(uppercasefirst(lowercase(site)), " - ", y))
