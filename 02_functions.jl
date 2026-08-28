@@ -1,5 +1,7 @@
 # static functions and GAMM 
 
+#static functions
+
 function spdMean(x::Vector{}, stepsPerDay::Int = 48)
     #::Vector
     lmx = div((length(x)-1),stepsPerDay) 
@@ -13,6 +15,8 @@ function spdMean(x::Vector{}, stepsPerDay::Int = 48)
     
 end
 
+# hourly temperature 
+
 function funTempH(tH, tasMax0, tasMax, tasMin, tasMin2, tSr)
 
     if tH<tSr
@@ -24,6 +28,14 @@ function funTempH(tH, tasMax0, tasMax, tasMin, tasMin2, tSr)
     end
 
     return(tempH)
+end
+
+# daily evaporation = Magnus formula
+
+function MagnusFormula(RH, T, b = 17.625, c = 243.04)
+    gamma = @. log(RH/100) + (b * T) / (c + T)
+    out = @. (c * gamma) / (b - gamma)
+    return(out)
 end
 
 # GAMM
