@@ -3,7 +3,7 @@ function initialize(;
     n_adultMosquito = 0,
     dims = (20,20),
     seed = 123,
-    dbm = 0.5, # debugging mode (0: no, 0.5: only time, 1: all)
+    dbm = 0, # debugging mode (0: no, 0.5: only time, 1: all)
     dt = fixedParams.dt,
 
     varParams = varParams,
