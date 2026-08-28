@@ -9,7 +9,7 @@ Pkg.activate(".")
 
 # libraries
 #add 
-using Agents, DataFrames, Random, Plots, SunCalc, Statistics, Dates, Interpolations, TidierData
+using Agents, CSV, DataFrames, Random, Plots, SunCalc, Statistics, Dates, Interpolations, TidierData
 
 #Defining Agents
 include("01_agentsDefinition.jl")
