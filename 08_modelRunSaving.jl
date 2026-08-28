@@ -1,7 +1,7 @@
 years = 2017:2024
 site = "MONTARNAUD"
 
-n_immatureMosquitoes = 10000
+n_immatureMosquitoes = 200
 
 for y in years
 
@@ -51,12 +51,12 @@ amdf = DataFrame(t = 1:varParams.durSim,
         P = spdMean(adf.sum_P, stepsPerDay),
         A = spdMean(adf.sum_A, stepsPerDay),
         O = stepsPerDay*spdMean(mdf.O, stepsPerDay),
-        V = stepsPerDay*spdMean(mdf.V, stepsPerDay))
+        V = spdMean(mdf.V, stepsPerDay))
 
 p1 = Plots.plot(amdf.t/7, [amdf.Ed, amdf.E, amdf.Eq], label=["Ed" "E" "Eq"]);
 p2 = Plots.plot(amdf.t/7, [amdf.L, amdf.P, amdf.A], label=["L" "P" "A"]);
-p3 = Plots.plot(1:52, 7*spdMean(amdf.O,7), label="Ovip.");
-p4 = Plots.plot(1:52, spdMean(amdf.V,7), label="Water Level");
+p3 = Plots.plot(1:52, 7*spdMean(amdf.O, 7), label="Ovip.");
+p4 = Plots.plot(1:52, spdMean(amdf.V, 7), label="Water Level");
 
 ptot = plot(p1, p2, p3, p4, plot_title = string(uppercasefirst(lowercase(site)), " - ", y))
 
