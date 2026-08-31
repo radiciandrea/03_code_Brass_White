@@ -3,18 +3,7 @@ function mosquito_step!(m::immatureMosquito, model)
 
     # pupae (to bring at the beginning!)
     if m.stage == 4 
-        # mortality (natural and competition)        
-        dead_P_potential = m.abundance*(1-exp(-model.muPdt))
-
-        if dead_P_potential < 1 
-            sampP = rand(model.rng)
-            dead_P = 1*(sampP < dead_P_potential)
-        else
-            dead_P = round(Int, dead_P_potential)
-        end
-
-        m.abundance = m.abundance - dead_P
-        
+              
         #aging and development
         m.age += model.deltaPdt
         if m.age >= 1
@@ -26,11 +15,38 @@ function mosquito_step!(m::immatureMosquito, model)
             end
             remove_agent!(m, model)   
         end
+
+        # mortality (natural and competition)        
+        dead_P_potential = m.abundance*(1-exp(-model.muPdt))
+
+        if dead_P_potential < 1 
+            sampP = rand(model.rng)
+            dead_P = 1*(sampP < dead_P_potential)
+        else
+            dead_P = round(Int, dead_P_potential)
+        end
+
+        m.abundance = m.abundance - dead_P
+
+        if m.abundance == 0
+            remove_agent!(m, model)         
+        end 
         
     end
 
     # larvae
     if m.stage == 3 
+               
+        #eating, ageing, development
+        m.cumFood += model.alpha*model.dt
+        m.cumTemp += model.tempH*model.dt
+        m.LSD += model.dt
+        m.age += model.deltaLdt
+
+        if m.age >= 1
+            m.stage = 4
+        end
+
         # mortality (natural and competition)        
         dead_L_potential = m.abundance*(1-exp(-model.muLdt))
 
@@ -42,32 +58,15 @@ function mosquito_step!(m::immatureMosquito, model)
         end
 
         m.abundance = m.abundance - dead_L
-        
-        #eating, ageing, development
-        m.cumFood += model.alpha*model.dt
-        m.cumTemp += model.tempH*model.dt
-        m.LSD += model.dt
-        m.age += model.deltaLdt
 
-        if m.age >= 1
-            m.stage = 4
-        end
+        if m.abundance == 0
+            remove_agent!(m, model)         
+        end 
         
     end
 
     # quiescent eggs 
     if m.stage == 2
-
-        # mortality (here fixed, and time step is needed)
-        dead_eggs_potential = m.abundance*(1-exp(-model.muEdt))
-        if dead_eggs_potential < 1
-            sampE = rand(model.rng)
-            dead_eggs = 1*(sampE < dead_eggs_potential)
-        else
-            dead_eggs = round(Int, dead_eggs_potential)
-        end
-
-        m.abundance = m.abundance - dead_eggs
 
         #no development      
         eggs_to_larvae_potential = (1-model.hQ)*m.abundance
@@ -81,15 +80,7 @@ function mosquito_step!(m::immatureMosquito, model)
         m.abundance = m.abundance - eggs_to_larvae 
         model.dbm == 1 && println("created ", eggs_to_larvae, " juvenile/s from E")        
         model.eggs_to_larvae += eggs_to_larvae
-        
-        if m.abundance == 0
-            remove_agent!(m, model)         
-        end 
-        
-    end
 
-    # normal eggs dynamics
-    if m.stage == 1
         # mortality (here fixed, and time step is needed)
         dead_eggs_potential = m.abundance*(1-exp(-model.muEdt))
         if dead_eggs_potential < 1
@@ -100,7 +91,16 @@ function mosquito_step!(m::immatureMosquito, model)
         end
 
         m.abundance = m.abundance - dead_eggs
+        
+        if m.abundance == 0
+            remove_agent!(m, model)         
+        end 
+        
+    end
 
+    # normal eggs dynamics
+    if m.stage == 1
+        
         #aging and development (without h)
         m.age += model.deltaEdt
         
@@ -120,11 +120,22 @@ function mosquito_step!(m::immatureMosquito, model)
 
             # the remaining are quiescent (or they were also before)
             m.stage = 2
-
-            if m.abundance == 0
-                remove_agent!(m, model)         
-            end 
         end
+
+        # mortality (here fixed, and time step is needed)
+        dead_eggs_potential = m.abundance*(1-exp(-model.muEdt))
+        if dead_eggs_potential < 1
+            sampE = rand(model.rng)
+            dead_eggs = 1*(sampE < dead_eggs_potential)
+        else
+            dead_eggs = round(Int, dead_eggs_potential)
+        end
+    
+        m.abundance = m.abundance - dead_eggs
+
+        if m.abundance == 0
+            remove_agent!(m, model)         
+        end 
     end
 
     # diapausing eggs dynamics
@@ -132,16 +143,6 @@ function mosquito_step!(m::immatureMosquito, model)
 
         # diapausing eggs here are just one agent (id = 0) of variable abundance.
         # no ED agents are created or removed
-
-        #mortality
-        dead_deggs_potential = m.abundance*(1-exp(-model.muDEdt))
-        if dead_deggs_potential < 1 
-            sampE = rand(model.rng)
-            dead_deggs = 1*(sampE < dead_deggs_potential)
-        else
-            dead_deggs = round(Int, dead_deggs_potential)
-        end
-        m.abundance = m.abundance - dead_deggs
 
         #diapausing eggs are supposed to be already developed
         # going to larvae
@@ -168,17 +169,21 @@ function mosquito_step!(m::immatureMosquito, model)
 
         model.deggs_to_larvae += deggs_to_larvae
         model.deggs_to_qeggs += deggs_to_qeggs
+
+        #mortality
+        dead_deggs_potential = m.abundance*(1-exp(-model.muDEdt))
+        if dead_deggs_potential < 1 
+            sampE = rand(model.rng)
+            dead_deggs = 1*(sampE < dead_deggs_potential)
+        else
+            dead_deggs = round(Int, dead_deggs_potential)
+        end
+        
+        m.abundance = m.abundance - dead_deggs
     end    
 end
 
 function mosquito_step!(m::adultMosquito, model)
-
-    # random mortality
-    
-    if rand(model.rng) > exp(-mu_A(model.tempH, m.wlength)*model.dt)
-        model.dbm == 1 && println("dead id: ", m.id)
-        remove_agent!(m, model)
-    end
 
     # if female
     if m.sex == 0
@@ -227,5 +232,12 @@ function mosquito_step!(m::adultMosquito, model)
 
             m.goniotrophicIncrease = 0
         end 
-        end    
+    end  
+        
+    # random mortality
+    
+    if rand(model.rng) > exp(-mu_A(model.tempH, m.wlength)*model.dt)
+        model.dbm == 1 && println("dead id: ", m.id)
+        remove_agent!(m, model)
+    end
 end
