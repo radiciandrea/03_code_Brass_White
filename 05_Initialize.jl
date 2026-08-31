@@ -17,6 +17,8 @@ function initialize(;
     K = fixedParams.K,
     alpha = 0.0,
 
+    irrigation = (0.1, 0.5), #added parameters for filling when too empty and no rain is forecasted (Vmax threshold & multiplier)
+
     deltaEdt = 0.0,
     muEdt = 0.0,
     muDEdt = 0.0,
@@ -68,6 +70,8 @@ function initialize(;
         :fd => fd,
         :K => K,
         :alpha => alpha,
+
+        :irrigation => irrigation,
 
         :hD => varParams.hD,
         :D => varParams.D,

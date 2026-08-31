@@ -21,6 +21,9 @@ function  model_step!(model)
     #hydrological functioning (CORRECT UNIT OF MEASURES)
     Vprec = model.V
     model.V = max(0, min(Vprec + model.sigma*(model.rho[model.t] - model.eta[model.t])*model.dt, model.Vmax)) 
+
+    #Irrigation module
+    model.V = ((model.V < model.Vmax*model.irrigation[1]) & (sum(model.rho[model.t:min(model.t +1, length(model.rho))]) == 0)) ? model.irrigation[2]*model.Vmax : model.V
     
     # eggs parameters
 
