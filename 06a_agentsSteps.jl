@@ -55,8 +55,41 @@ function mosquito_step!(m::immatureMosquito, model)
         
     end
 
-    # eggs and quiescente eggs dynamics
-    if (m.stage == 1 || m.stage == 2)
+    # quiescent eggs 
+    if m.stage == 2
+
+        # mortality (here fixed, and time step is needed)
+        dead_eggs_potential = m.abundance*(1-exp(-model.muEdt))
+        if dead_eggs_potential < 1
+            sampE = rand(model.rng)
+            dead_eggs = 1*(sampE < dead_eggs_potential)
+        else
+            dead_eggs = round(Int, dead_eggs_potential)
+        end
+
+        m.abundance = m.abundance - dead_eggs
+
+        #no development      
+        eggs_to_larvae_potential = (1-model.hQ)*m.abundance
+        if eggs_to_larvae_potential < 1 
+            sampE = rand(model.rng)
+            eggs_to_larvae = 1*(sampE < eggs_to_larvae_potential)
+        else
+            eggs_to_larvae = round(Int, eggs_to_larvae_potential)
+        end
+
+        m.abundance = m.abundance - eggs_to_larvae 
+        model.dbm == 1 && println("created ", eggs_to_larvae, " juvenile/s from E")        
+        model.eggs_to_larvae += eggs_to_larvae
+        
+        if m.abundance == 0
+            remove_agent!(m, model)         
+        end 
+        
+    end
+
+    # normal eggs dynamics
+    if m.stage == 1
         # mortality (here fixed, and time step is needed)
         dead_eggs_potential = m.abundance*(1-exp(-model.muEdt))
         if dead_eggs_potential < 1
