@@ -32,8 +32,8 @@ function  model_step!(model)
     
     # mortality
 
-    tsmuEdt = -log(12.217/(6.115*sqrt(2*pi))*exp(-0.5*(model.tempH - 24.672)^2/6.115^2))*model.dt # throught stage egg mortality rate
-    model.muEdt = tsmuEdt*max(-0.0008256*model.tempH^2 + 0.0334072*model.tempH - 0.0557825, 0.01)*model.dt # egg mortality rate
+    tsmuE = -log(12.217/(6.115*sqrt(2*pi))*exp(-0.5*(model.tempH - 24.672)^2/6.115^2)) # throught stage egg mortality rate
+    model.muEdt = tsmuE*max(-0.0008256*model.tempH^2 + 0.0334072*model.tempH - 0.0557825, 0.01)*model.dt # egg mortality rate
     model.muDEdt = model.tempH > -12 ? 0.01*model.dt : 0.1*model.dt # diapausing egg mortality rate
 
     # quiescence entrancy
@@ -83,9 +83,9 @@ function  model_step!(model)
     if model.V > 0
       if (model.V < model.Vmax) && (model.rho[model.t]*model.sigma < 0.5 * model.Vmax)
         # throught stage mortality
-        tSmuPdt = -log(max(-0.0070628*model.tempH^2 + 0.3331028*model.tempH - 2.9878761, 0.01))*model.dt
+        tSmuP = -log(max(-0.0070628*model.tempH^2 + 0.3331028*model.tempH - 2.9878761, 0.01))
         #instantaneous mortality rate
-        model.muPdt = -log(max(2.916*10^(-5)*model.tempH*(model.tempH - 10.08)*(47.68 - model.tempH)^(1/0.8317), 0.01))*tSmuPdt
+        model.muPdt = -log(max(2.916*10^(-5)*model.tempH*(model.tempH - 10.08)*(47.68 - model.tempH)^(1/0.8317), 0.01))*tSmuP*model.dt
       else
         model.muPdt
       end
