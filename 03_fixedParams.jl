@@ -13,8 +13,6 @@ freqUpdateLargeClasses = max(1, div(stepsPerDay, 12)), # frequency of the day at
 sigma = 114^2, #Surface area of developmental habitat (mm2)
 lambda = 38, # height of the developmental habitat (mm2
 fd = 80, #Detritus in larval habitat
-K = 80, #Number of larval habitats (TO CHANGE)
-
 
 # Larval and Juvenile
 muDD = 0.99, #Mortality rate of juveniles when the habitat dries out (day−1)
