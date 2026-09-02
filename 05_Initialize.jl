@@ -9,21 +9,18 @@ function initialize(;
     varParams = varParams,
     wlmin = fixedParams.wlmin,
     wlmax = fixedParams.wlmax,
-
-    Vmax = fixedParams.sigma*fixedParams.lambda,
     sigma = fixedParams.sigma,
+    Vmax = fixedParams.sigma*fixedParams.lambda,
+
+    # TO RETHINK 
     GPP = 0,
     fd = fixedParams.fd,
-    K = fixedParams.K,
     alpha = 0.0,
-
-    irrigation = (0.1, 0.5), #added parameters for filling when too empty and no rain is forecasted (Vmax threshold & multiplier)
+    nr_h_hr = [1, 0, 0], # number of rainfed only reservoirs; number of human-fed only reservoirs; number of human-fed only reservoirs
 
     deltaEdt = 0.0,
     muEdt = 0.0,
     muDEdt = 0.0,
-    Q = 0.0,
-    hQ = 0.0,
     deltaLdt = 0.0,
     muLdt = 0.0,
     muDF = fixedParams.muDF,
@@ -33,16 +30,14 @@ function initialize(;
     deltaGdt = 0.0,
     #muAdt = 0.0,
 
-    eggs_to_larvae = 0,
-    deggs_to_larvae = 0,
-    deggs_to_qeggs = 0,
-    eggs_to_qeggs = 0,
-    qeggs_to_larvae = 0,
+    eggs_to_larvae = [0, 0, 0], # one for each breeding site type
+    deggs_to_qeggs = [0, 0, 0],
     
-    laidE = 0, #for ovposition counter
-    laidED = 0, #for ovposition counter
-    laidEf = 0, #for eggs generation
-    laidEDf = 0, #for eggs generation
+    laidE = [0, 0, 0], #for eggs generation
+    laidED = [0, 0, 0], #for eggs generation
+
+    laidEf = 0, #for ovposition counter
+    laidEDf = 0, #for ovposition counter
 
     t = 1,
     it = 1,
@@ -63,15 +58,13 @@ function initialize(;
         :rho => varParams.rho,
         
         :eta => varParams.eta,
-        :V => Vmax/2, # Brass/White assumed it is completely full at the beginning
         :Vmax => Vmax,
         :sigma => sigma,
         :GPP => GPP,
         :fd => fd,
-        :K => K,
         :alpha => alpha,
 
-        :irrigation => irrigation,
+        :nr_h_hr => nr_h_hr,
 
         :hD => varParams.hD,
         :D => varParams.D,
@@ -79,8 +72,6 @@ function initialize(;
         :deltaEdt => deltaEdt,
         :muEdt => muEdt,
         :muDEdt => muDEdt,
-        :Q => Q,
-        :hQ => hQ,
         :deltaLdt => deltaLdt,
         :muLdt => muLdt,
         :muDFdt => muDF*dt,
@@ -99,31 +90,40 @@ function initialize(;
         :tempH => 0,
 
         :eggs_to_larvae => eggs_to_larvae,
-        :deggs_to_larvae => deggs_to_larvae,
         :deggs_to_qeggs => deggs_to_qeggs,
-        :eggs_to_qeggs => eggs_to_qeggs,
-        :qeggs_to_larvae => qeggs_to_larvae,
+
         :laidE => laidE,
         :laidED => laidED,
-        :laidEf => laidEf,
-        :laidEDf => laidEDf)
+
+        :laidEf => laidEf, # fake, for oviposition
+        :laidEDf => laidEDf # fake, for oviposition
+        )
 
     space = GridSpace(dims, periodic = false) #no more GridSpaceSingle
-    model = StandardABM(Union{immatureMosquito, adultMosquito}, space;
+    model = StandardABM(Union{immatureMosquito, adultMosquito, breedingSite}, space;
     properties, agent_step! = mosquito_step!, model_step!, rng = rng,
     agents_first = false)
 
     #add agents 
-    if n_immatureMosquitoes > 0
-        m = immatureMosquito(0, (1,1), 0, n_immatureMosquitoes, 0.0, 0.0, 0.0, 0.0) # lets consider non diapausing eggs
+    
+    for i in  5 .+ (1:n_adultMosquito)
+        m = adultMosquito(i, (1,1),  i < n_adultMosquito/2 ? 0 : 1, 0.0, 0.0)
         add_agent!(m, model) #add_agent_single!
     end
 
-    for i in 1:n_adultMosquito
-        m = adultMosquito(i, (1,1),  i < n_adultMosquito/2 ? 0 : 1, 0.0, 0.0)
+    for i in  1:3 #findall(>(0), nr_h_hr)
+        b = breedingSite(2+i, (2,i),  i, Vmax*nr_h_hr[i], 0.5*Vmax*nr_h_hr[i], 0.0, 0.0, 0.0, 0.0, 0.0)
+        add_agent!(b, model) #add_agent_single!
+
+        if round(n_immatureMosquitoes*nr_h_hr[i]/sum(nr_h_hr)) > 0
+        m = immatureMosquito(i-1, (1,1), 0, round(n_immatureMosquitoes*nr_h_hr[i]/sum(nr_h_hr)), 0.0, 0.0, 0.0, 0.0, i) # lets consider non diapausing eggs
         add_agent!(m, model) #add_agent_single!
+        end
+
     end
 
     return model
 end
 
+# agents 0, 1, 2 are ED of the 3 breeting sites
+# whose ID are 3, 4, 5
