@@ -1,10 +1,10 @@
 function  model_step!(model)
 
   # zero oviposition counter
-    model.laidE = 0
-    model.laidED = 0
+    model.laidEf = 0
+    model.laidEDf = 0
 
-    # to correct
+    # time
     model.it = max(1, abmtime(model))
     model.t = max(1, round(Int64, abmtime(model)*model.dt))
     model.dbm > 0 && println(model.t, " - (", model.it, ")")
@@ -18,13 +18,6 @@ function  model_step!(model)
 
     model.tempH = funTempH(tH1, tasMax0, tasMax1, tasMin1, tasMin2, tSr1)
 
-    #hydrological functioning (CORRECT UNIT OF MEASURES)
-    Vprec = model.V
-    model.V = max(0, min(Vprec + model.sigma*(model.rho[model.t] - model.eta[model.t])*model.dt, model.Vmax)) 
-
-    #Irrigation module
-    model.V = ((model.V < model.Vmax*model.irrigation[1]) & (sum(model.rho[model.t:min(model.t +1, length(model.rho))]) == 0)) ? model.irrigation[2]*model.Vmax : model.V
-    
     # eggs parameters
 
     # development
@@ -32,66 +25,20 @@ function  model_step!(model)
     
     # mortality
 
-    tsmuE = -log(12.217/(6.115*sqrt(2*pi))*exp(-0.5*(model.tempH - 24.672)^2/6.115^2)) # throught stage egg mortality rate
-    model.muEdt = tsmuE*max(-0.0008256*model.tempH^2 + 0.0334072*model.tempH - 0.0557825, 0.01)*model.dt # egg mortality rate
+    #tsmuE = -log(12.217/(6.115*sqrt(2*pi))*exp(-0.5*(model.tempH - 24.672)^2/6.115^2)) # throught stage egg mortality rate
+    #model.muEdt = tsmuE*max(-0.0008256*model.tempH^2 + 0.0334072*model.tempH - 0.0557825, 0.01)*model.dt # egg mortality rate
+    
+    # Let's use the per day Metelmann mortality:
+    model.muEdt =-log(0.955 * exp(-0.5*((model.tempH-18.8)/21.53)^6))*model.dt
+    
     model.muDEdt = model.tempH > -12 ? 0.01*model.dt : 0.1*model.dt # diapausing egg mortality rate
 
-    # quiescence entrancy
-    model.Q = model.V < Vprec ? 1 - model.V/model.Vmax : 0
+    # Larval parameters: in agent_step
 
-    #Hatching out of quiescent class
-    model.hQ = model.V > Vprec ? model.V/model.Vmax : 0
-
-    #larval parameters
-
-    #Primary production of the larval habitat (corrected from github)
-    #model.GPP = (10^-6 * log10(0.45 + 0.095*model.tempH)*model.V + model.fd)*model.dt
-    model.GPP = (10^(0.45 + 0.095*model.tempH - 6)*model.V + model.fd)*model.dt
-
-    #total number of larvae (0.1 to plot also when infinite)
-    totL = max(sum(l.abundance for l in allagents(model) if l isa immatureMosquito && l.stage == 3; init = 0), 0.1)
-
-    # Food available per larvae
-    model.alpha = model.GPP/totL
-
-    # development (from GLM)
-    model.deltaLdt = g_L(model.tempH, log(model.alpha))*model.dt # since food functions are written as log
-
-    #crowding term mortality (after mail exchange with Dom)
-    cTmuL = max(0, (exp(-exp(1000*(1-totL/3.0)/model.V)) - exp(-1))/(1 - exp(-1)))
-
-    # mortality (from GLM) 
-    if model.V > 0
-      if (model.V < model.Vmax) && (model.rho[model.t]*model.sigma < 0.5 * model.Vmax)
-        # through-stage mortality (from GLM) 
-        tSmuL = mu_L(model.tempH, log(model.alpha)) # since food functions are written as log
-        # Instantanous mortality
-        model.muLdt = min(tSmuL*g_L(model.tempH, log(model.alpha)) + cTmuL, 1)*model.dt
-      else
-        model.muLdt = model.muDFdt
-      end
-    else
-      model.muLdt = model.muDDdt
-    end
-
-    # Pupae parameters
+    # Pupae parameters (mortality into agetn_step)
     
     #development
     model.deltaPdt = -log(max(2.916*10^(-5)*model.tempH*(model.tempH - 10.08)*(47.68 - model.tempH)^(1/0.8317), 0.01))*model.dt
-
-    # mortality 
-    if model.V > 0
-      if (model.V < model.Vmax) && (model.rho[model.t]*model.sigma < 0.5 * model.Vmax)
-        # throught stage mortality
-        tSmuP = -log(max(-0.0070628*model.tempH^2 + 0.3331028*model.tempH - 2.9878761, 0.01))
-        #instantaneous mortality rate
-        model.muPdt = -log(max(2.916*10^(-5)*model.tempH*(model.tempH - 10.08)*(47.68 - model.tempH)^(1/0.8317), 0.01))*tSmuP*model.dt
-      else
-        model.muPdt
-      end
-    else
-      model.muPdt
-    end
 
     # Adult parameters
 
@@ -100,52 +47,49 @@ function  model_step!(model)
     model.deltaGdt = max(0.000193 * tempHG * (tempHG - 10.25) * sqrt(38.32 - tempHG), 0.01)*model.dt
 
     # mortality & fecundity:
-    # defined per individual      
+    # defined in agent-step     
 
     #generation of new large agents four times a day
     if mod(model.it,  div(fixedParams.stepsPerDay, fixedParams.freqUpdateLargeClasses)) == 0
 
-      if model.laidEf >0
-        add_agent!(immatureMosquito, model;
-                    abundance =model.laidEf, stage = 1, age = 0, cumFood = 0, cumTemp = 0, LSD = 0)
-                    # I assume they spent already 1/2 of the period in this class since previous update
-                model.dbm == 1 && println("created ", model.laidEf, " egg(s)")
-        model.laidEf = 0
+      if sum(model.laidE) >0
+
+        for i in findall(>(0), model.laidE)
+          add_agent!(immatureMosquito, model;
+                      abundance =model.laidE[i], stage = 1, age = 0.0, cumFood = 0.0, cumTemp = 0.0, LSD = 0.0, breedingSite = i)
+                      # I assume they spent already 1/2 of the period in this class since previous update
+                  model.dbm == 1 && println("created ", model.laidE[i], " egg(s)")       
+                end
+        model.laidE = [0, 0, 0]
       end
 
       # in the case if diapausing eggs, we do not create a new agent, we just increment the abundance of the existent (ID0)
-      if model.laidEDf >0
-        model[0].abundance += model.laidEDf
-        model.dbm == 1 && println("created ", model.laidEDf, " diapausing egg(s)")
-        model.laidEDf = 0
+      if sum(model.laidED) >0
+        for i in ((findall(>(0), model.laidED)) .- 1)
+          model[i].abundance += model.laidED[i+1]
+        end
+
+        model.dbm == 1 && println("created ", sum(model.laidED), " diapausing egg(s)")
+        model.laidED = [0, 0, 0]
       end
 
-      if model.deggs_to_larvae > 0
-        add_agent!(immatureMosquito, model;
-        abundance = model.deggs_to_larvae, stage = 3, age = 0, cumFood = 0, cumTemp = 0, LSD = 0)
-        model.deggs_to_larvae = 0
+      if sum(model.deggs_to_qeggs) > 0
+        for i in findall(>(0), model.deggs_to_qeggs)
+            add_agent!(immatureMosquito, model;
+            abundance = model.deggs_to_qeggs[i], stage = 2, age = 0.0, cumFood = 0.0, cumTemp = 0.0, LSD = 0.0, breedingSite = i)
+        end
+        
+        model.deggs_to_qeggs = [0, 0, 0]
       end
 
-      if model.deggs_to_qeggs > 0
-        add_agent!(immatureMosquito, model;
-        abundance = model.deggs_to_qeggs, stage = 2, age = 0, cumFood = 0, cumTemp = 0, LSD = 0)
-        model.deggs_to_qeggs = 0
+      if sum(model.eggs_to_larvae) > 0
+        for i in findall(>(0), model.eggs_to_larvae)
+          add_agent!(immatureMosquito, model;
+          abundance = model.eggs_to_larvae[i], stage = 3, age = 0.0, cumFood = 0.0, cumTemp = 0.0, LSD = 0.0, breedingSite = i)
+        end
+        
+        model.eggs_to_larvae = [0, 0, 0]
       end
-
-      if model.eggs_to_larvae > 0
-        add_agent!(immatureMosquito, model;
-        abundance = model.eggs_to_larvae, stage = 3, age = 0, cumFood = 0, cumTemp = 0, LSD = 0)
-        model.eggs_to_larvae = 0
-      end
-
-      if model.eggs_to_qeggs > 0
-        add_agent!(immatureMosquito, model;
-        abundance = model.eggs_to_qeggs, stage = 2, age = 0, cumFood = 0, cumTemp = 0, LSD = 0)
-        model.eggs_to_qeggs = 0
-      end
-
-      #pupae are created in agent step
-
     end
 
 end
